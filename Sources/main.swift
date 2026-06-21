@@ -410,14 +410,20 @@ final class AppController: NSObject, NSApplicationDelegate {
         case ..<0.70: iconName = "moonphase.waxing.crescent"
         default:      iconName = "moonphase.new.moon"
         }
-        if var img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil) {
-            if #available(macOS 12.0, *) {
-                let cfg = NSImage.SymbolConfiguration(paletteColors: [.labelColor, .labelColor])
-                img = img.withSymbolConfiguration(cfg) ?? img
-            } else {
-                img.isTemplate = true
+        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+        if #available(macOS 12.0, *) {
+            let palette = NSImage.SymbolConfiguration(paletteColors: [.labelColor, .labelColor])
+            let combined = sizeConfig.applying(palette)
+            if let img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil)?
+                .withSymbolConfiguration(combined) {
+                statusItem.button?.image = img
             }
-            statusItem.button?.image = img
+        } else {
+            if let img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil)?
+                .withSymbolConfiguration(sizeConfig) {
+                img.isTemplate = true
+                statusItem.button?.image = img
+            }
         }
     }
 
