@@ -401,7 +401,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         // v2: "sun.max" / "sun.haze" / "moon"  状態で3種類
         // v3: "sun.max" / "sun.haze" / "moon" / "moon.zzz" / "wand.and.stars" 5種類
         // v4: moonphase 5段階（現在）- 調整量に応じて満月→新月
-        let level = 1.0 - brightness
+        let level = (1.0 - brightness) * 0.6 + warmth * 0.4
         let iconName: String
         switch level {
         case ..<0.12: iconName = "moonphase.full.moon"
