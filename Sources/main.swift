@@ -395,12 +395,48 @@ final class AppController: NSObject, NSApplicationDelegate {
 
     // MARK: - アイコン更新
 
+    // 半透明ピクセルを完全透過にしてテンプレート画像を返す
+    private func moonImage(named name: String) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+        guard let src = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config) else { return nil }
+        src.isTemplate = true
+        let scale = Int(NSScreen.main?.backingScaleFactor ?? 2)
+        let w = Int(src.size.width) * scale
+        let h = Int(src.size.height) * scale
+        guard w > 0, h > 0,
+              let ctx = CGContext(data: nil, width: w, height: h,
+                                  bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(),
+                                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        ctx.scaleBy(x: CGFloat(scale), y: CGFloat(scale))
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: ctx, flipped: false)
+        NSColor.white.set()
+        src.draw(in: NSRect(origin: .zero, size: src.size))
+        NSGraphicsContext.restoreGraphicsState()
+        guard let data = ctx.data else { return nil }
+        let buf = data.bindMemory(to: UInt8.self, capacity: w * h * 4)
+        for i in 0..<(w * h) {
+            if buf[i*4+3] < 200 {
+                buf[i*4+0]=0; buf[i*4+1]=0; buf[i*4+2]=0; buf[i*4+3]=0
+            } else {
+                buf[i*4+0]=255; buf[i*4+1]=255; buf[i*4+2]=255; buf[i*4+3]=255
+            }
+        }
+        guard let cg = ctx.makeImage() else { return nil }
+        let result = NSImage(cgImage: cg, size: src.size)
+        result.isTemplate = true
+        return result
+    }
+
     func updateStatusIcon() {
         // Icon history:
         // v1: "circle.lefthalf.filled"  ◑ 固定1種類
         // v2: "sun.max" / "sun.haze" / "moon"  状態で3種類
         // v3: "sun.max" / "sun.haze" / "moon" / "moon.zzz" / "wand.and.stars" 5種類
-        // v4: moonphase 5段階（現在）- 調整量に応じて満月→新月
+        // v4: moonphase 5段階 - 調整量に応じて満月→新月、影部分は透過
         let level = (1.0 - brightness) * 0.6 + warmth * 0.4
         let iconName: String
         switch level {
@@ -410,10 +446,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         case ..<0.70: iconName = "moonphase.waxing.crescent"
         default:      iconName = "moonphase.new.moon"
         }
-        let sizeConfig = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
-        if let img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil)?
-            .withSymbolConfiguration(sizeConfig) {
-            img.isTemplate = true
+        if let img = moonImage(named: iconName) {
             statusItem.button?.image = img
         }
     }
