@@ -412,7 +412,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         }
         let sizeConfig = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
         if #available(macOS 12.0, *) {
-            let palette = NSImage.SymbolConfiguration(paletteColors: [.labelColor, .labelColor])
+            let palette = NSImage.SymbolConfiguration(paletteColors: [.white, .white])
             let combined = sizeConfig.applying(palette)
             if let img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil)?
                 .withSymbolConfiguration(combined) {
