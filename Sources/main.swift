@@ -410,8 +410,13 @@ final class AppController: NSObject, NSApplicationDelegate {
         case ..<0.70: iconName = "moonphase.waxing.crescent"
         default:      iconName = "moonphase.new.moon"
         }
-        if let img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil) {
-            img.isTemplate = true
+        if var img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil) {
+            if #available(macOS 12.0, *) {
+                let cfg = NSImage.SymbolConfiguration(paletteColors: [.labelColor, .labelColor])
+                img = img.withSymbolConfiguration(cfg) ?? img
+            } else {
+                img.isTemplate = true
+            }
             statusItem.button?.image = img
         }
     }
