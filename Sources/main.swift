@@ -397,10 +397,19 @@ final class AppController: NSObject, NSApplicationDelegate {
 
     func updateStatusIcon() {
         // Icon history:
-        // v1: "circle.lefthalf.filled"  ◑ 固定1種類（初期）
-        // v2: "sun.max" / "sun.haze" / "moon"  状態で3種類切り替え
-        // v3: "sun.max" / "sun.haze" / "moon" / "moon.zzz" / "wand.and.stars"（自動モード）5種類
-        let iconName = "circle.lefthalf.filled"
+        // v1: "circle.lefthalf.filled"  ◑ 固定1種類
+        // v2: "sun.max" / "sun.haze" / "moon"  状態で3種類
+        // v3: "sun.max" / "sun.haze" / "moon" / "moon.zzz" / "wand.and.stars" 5種類
+        // v4: moonphase 5段階（現在）- 調整量に応じて満月→新月
+        let level = (1.0 - brightness) * 0.6 + warmth * 0.4
+        let iconName: String
+        switch level {
+        case ..<0.12: iconName = "moonphase.full.moon"
+        case ..<0.30: iconName = "moonphase.waxing.gibbous"
+        case ..<0.50: iconName = "moonphase.first.quarter"
+        case ..<0.70: iconName = "moonphase.waxing.crescent"
+        default:      iconName = "moonphase.new.moon"
+        }
         if let img = NSImage(systemSymbolName:iconName, accessibilityDescription:nil) {
             img.isTemplate = true
             statusItem.button?.image = img
