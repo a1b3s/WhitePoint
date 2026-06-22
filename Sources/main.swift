@@ -126,7 +126,7 @@ private let locTable: [String: Loc] = [
     ),
 ]
 
-private let langNames = ["ja":"🇯🇵 日本語","en":"🇺🇸 English","zh":"🇨🇳 中文","ko":"🇰🇷 한국어","es":"🇪🇸 Español"]
+private let langNames = ["ja":"日本語","en":"English","zh":"中文","ko":"한국어","es":"Español"]
 private let langOrder = ["ja","en","zh","ko","es"]
 
 func detectLang() -> String {
