@@ -258,6 +258,9 @@ final class AppController: NSObject, NSApplicationDelegate {
     private var statsTimer: Timer?
     private var lastStatTick = Date()
 
+    // アイコンスタイル: 0=月の満ち欠け  1=◑固定
+    private var iconStyle: Int = 0
+
     // ホットキー
     private var hotKeyHandler: EventHandlerRef?
     private var hotKeyRefs: [EventHotKeyRef?] = []
@@ -283,6 +286,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         scheduleEnabled = ud.bool(forKey:"scheduleEnabled")
         autoEnabled     = ud.bool(forKey:"autoEnabled")
         autoStrength    = ud.object(forKey:"autoStrength") != nil ? ud.integer(forKey:"autoStrength") : 1
+        iconStyle       = ud.object(forKey:"iconStyle")    != nil ? ud.integer(forKey:"iconStyle")    : 0
         if let d=ud.data(forKey:"scheduleRules"),
            let r=try? JSONDecoder().decode([ScheduleRule].self, from:d) { rules=r }
         loadStats()
@@ -363,6 +367,18 @@ final class AppController: NSObject, NSApplicationDelegate {
         let li=NSMenuItem(title:launchAtLoginTitle(), action:#selector(toggleLaunchAtLogin), keyEquivalent:"")
         li.target=self; li.isEnabled=true; menu.addItem(li); launchAtLoginItem=li
 
+        // アイコンスタイルサブメニュー
+        let iconItem=NSMenuItem(title:"Icon Style", action:nil, keyEquivalent:"")
+        let iconSub=NSMenu(); iconSub.autoenablesItems=false
+        let iconStyles=[("Moon Phase 🌕→🌑", 0), ("◑ Fixed", 1)]
+        for (name, idx) in iconStyles {
+            let it=NSMenuItem(title:name, action:#selector(selectIconStyle(_:)), keyEquivalent:"")
+            it.target=self; it.representedObject=idx
+            it.state=(idx==iconStyle) ? .on:.off; it.isEnabled=true
+            iconSub.addItem(it)
+        }
+        iconItem.submenu=iconSub; iconItem.isEnabled=true; menu.addItem(iconItem)
+
         // 言語サブメニュー
         let langItem=NSMenuItem(title:s.langMenu, action:nil, keyEquivalent:"")
         let langSub=NSMenu(); langSub.autoenablesItems=false
@@ -437,6 +453,15 @@ final class AppController: NSObject, NSApplicationDelegate {
         // v2: "sun.max" / "sun.haze" / "moon"  状態で3種類
         // v3: "sun.max" / "sun.haze" / "moon" / "moon.zzz" / "wand.and.stars" 5種類
         // v4: moonphase 5段階 - 調整量に応じて満月→新月、影部分は透過
+        if iconStyle == 1 {
+            let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .regular)
+            if let img = NSImage(systemSymbolName:"circle.lefthalf.filled", accessibilityDescription:nil)?
+                .withSymbolConfiguration(config) {
+                img.isTemplate = true
+                statusItem.button?.image = img
+            }
+            return
+        }
         let level = (1.0 - brightness) * 0.6 + warmth * 0.4
         let iconName: String
         switch level {
@@ -562,6 +587,14 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     // MARK: - 言語切り替え
+
+    @objc private func selectIconStyle(_ sender: NSMenuItem) {
+        guard let idx = sender.representedObject as? Int else { return }
+        iconStyle = idx
+        UserDefaults.standard.set(idx, forKey:"iconStyle")
+        statusItem.menu = buildMenu()
+        updateStatusIcon()
+    }
 
     @objc private func selectLanguage(_ sender: NSMenuItem) {
         guard let code = sender.representedObject as? String else { return }
